@@ -8,8 +8,7 @@ use Aero\Catalog\Models\Variant;
 
 class WineSearcher
 {
-    #protected $filename = 'winesearcherfeed.xml';
-    protected $filename = 'testwinesearcherfeed.xml';
+    protected $filename = 'winesearcherfeed.xml';
     
     /**
      * Generate the Wine Searcher XML feed
