@@ -5,7 +5,7 @@
     "homepage": "https://www.sypo.uk",
     "license": "MIT",
     "require": {
-		"aerocommerce/admin": "^0",
+		"aerocommerce/admin": "^0"
 	},
     "authors": [
         {
