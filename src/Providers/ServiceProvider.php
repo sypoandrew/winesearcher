@@ -1,6 +1,6 @@
 <?php
 
-namespace Sypo\WineSearcher\Providers;
+namespace Sypo\Winesearcher\Providers;
 
 use Aero\Admin\AdminModule;
 use Aero\Common\Providers\ModuleServiceProvider;
@@ -10,7 +10,7 @@ use Aero\Common\Settings\SettingGroup;
 class ServiceProvider extends ModuleServiceProvider
 {
     protected $commands = [
-        'Sypo\WineSearcher\Console\Commands\WineSearcherFeed',
+        'Sypo\Winesearcher\Console\Commands\WineSearcherFeed',
     ];
 
     public function register(): void 

@@ -25,15 +25,27 @@ class WineSearcher
 			foreach($v as $variant){
 				$p = $variant->product();
 				$price = $prices()->where('quantity', 1)->first();
-				$vintage = optional($p->tags()->join('tag_groups', 'tag_groups.id', '=', 'tags.tag_group_id')->where("tag_groups.name->{$lang}", 'Critic Score')->first())->name;
+				$vintage = optional($p->tags()->join('tag_groups', 'tag_groups.id', '=', 'tags.tag_group_id')->where("tag_groups.name->{$lang}", 'Vintage')->first())->name;
+				$bottle_size = optional($p->tags()->join('tag_groups', 'tag_groups.id', '=', 'tags.tag_group_id')->where("tag_groups.name->{$lang}", 'Bottle Size')->first())->name;
+				$case_size = optional($p->tags()->join('tag_groups', 'tag_groups.id', '=', 'tags.tag_group_id')->where("tag_groups.name->{$lang}", 'Case Size')->first())->name;
+				$bottle = "{$case_size} x {$bottle_size}";
+				
 				$arr[] = [
 				'name' => $p->name,
 				'price' => $price->value,
 				'vintage' => optional($p->tags()->join('tag_groups', 'tag_groups.id', '=', 'tags.tag_group_id')->where("tag_groups.name->{$lang}", 'Critic Score')->first())->name,
-				'bottle' => '',
+				'bottle' => $bottle,
 				'link' => $p->getUrl(true),
 				]
 			}
+			
+			
+			$xmlString = '';
+			$xmlString .= '<?xml version="1.0" encoding="UTF-8"?><wine-searcher-datafeed><wine-list>';
+			foreach($arr as $wine){
+				$xmlString .= '<wine><wine-name><![CDATA['.$wine['name'].']]></wine-name><price>'.$wine['price'].'</price><vintage>'.$wine['vintage'].'</vintage><bottle-size>'.$wine['bottle'].'</bottle-size><link>'.$wine['link'].'</link></wine>';
+			}
+			$xmlString .= '</wine-list></wine-searcher-datafeed>';
 			
 			
 			$dom = new \DOMDocument;
