@@ -1,0 +1,33 @@
+{
+    "name": "sypo/winesearcher",
+    "type": "project",
+    "description": "Wine Searcher integration with Aero Commerce",
+    "homepage": "https://www.sypo.uk",
+    "license": "MIT",
+    "require": {
+		"aerocommerce/admin": "^0",
+	},
+    "authors": [
+        {
+            "name": "Andrew Tanner",
+            "email": "andrew@sypo.uk",
+            "homepage": "http://www.sypo.uk",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Sypo\\Winesearcher\\": "src/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "0.1.x-dev"
+        },
+        "laravel": {
+            "providers": [
+                "Sypo\\Winesearcher\\Providers\\ServiceProvider"
+            ]
+        }
+    }
+}

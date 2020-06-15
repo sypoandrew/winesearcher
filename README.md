@@ -1,0 +1,1 @@
+# Wine Searcher module for Aero
