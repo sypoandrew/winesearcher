@@ -3,7 +3,7 @@
 namespace Sypo\Winesearcher\Console\Commands;
 
 use Illuminate\Console\Command;
-use Sypo\Winesearcher\Models\Sypo\WineSearcher;
+use Sypo\Winesearcher\Models\WineSearcher;
 
 class WineSearcherFeed extends Command
 {
