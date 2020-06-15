@@ -1,8 +1,8 @@
 <?php
-namespace Sypo\WineSearcher\Models;
+namespace Sypo\Winesearcher\Models;
 
 use Illuminate\Support\Facades\Log;
-use Sypo\WineSearcher\Models\WineSearcher;
+use Sypo\Winesearcher\Models\WineSearcher;
 use Aero\Catalog\Models\Product;
 
 class WineSearcher

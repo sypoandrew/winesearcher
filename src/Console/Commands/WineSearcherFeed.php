@@ -1,9 +1,9 @@
 <?php
 
-namespace Sypo\WineSearcher\Console\Commands;
+namespace Sypo\Winesearcher\Console\Commands;
 
 use Illuminate\Console\Command;
-use Sypo\WineSearcher\Models\Sypo\WineSearcherFeed;
+use Sypo\Winesearcher\Models\Sypo\WineSearcher;
 
 class WineSearcherFeed extends Command
 {
@@ -38,7 +38,7 @@ class WineSearcherFeed extends Command
      */
     public function handle()
     {
-        $f = new WineSearcherFeed;
+        $f = new WineSearcher;
 		if($f->call()){
 			$this->info('Feed generated successfully');
 		}
