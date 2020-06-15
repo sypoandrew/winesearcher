@@ -4,21 +4,46 @@ namespace Sypo\Winesearcher\Models;
 use Illuminate\Support\Facades\Log;
 use Sypo\Winesearcher\Models\WineSearcher;
 use Aero\Catalog\Models\Product;
+use Aero\Catalog\Models\Variant;
 
 class WineSearcher
 {
-    protected $filename = 'winesearcher.xml';
+    #protected $filename = 'winesearcher.xml';
+    protected $filename = 'testwinesearcher.xml';
+    
     /**
-     * Heartbeat API – Checks that Liv-ex server is up and available
+     * Generate the Wine Searcher XML feed
      *
      * @return boolean
      */
     public function call()
     {
         try {
-			$q = new Product;
-			$p = $q->scopeHasStock($q, true)->count();
-			dd($p);
+			$arr = [];
+			
+			$v = new Variant::where('sku', 'LIKE', 'IB%')->where('stock_level', '>', 0)->products()->where('active', 1)->get();
+			foreach($v as $variant){
+				$p = $variant->product();
+				$price = $prices()->where('quantity', 1)->first();
+				$vintage = optional($p->tags()->join('tag_groups', 'tag_groups.id', '=', 'tags.tag_group_id')->where("tag_groups.name->{$lang}", 'Critic Score')->first())->name;
+				$arr[] = [
+				'name' => $p->name,
+				'price' => $price->value,
+				'vintage' => optional($p->tags()->join('tag_groups', 'tag_groups.id', '=', 'tags.tag_group_id')->where("tag_groups.name->{$lang}", 'Critic Score')->first())->name,
+				'bottle' => '',
+				'link' => $p->getUrl(true),
+				]
+			}
+			
+			
+			$dom = new \DOMDocument;
+			$dom->preserveWhiteSpace = FALSE;
+			$dom->loadXML($xmlString);
+
+			//Save XML as a file
+			$dom->save($this->filename);
+			
+			return true;
 		}
 		catch(RequestException $e) {
 			#Log::warning($e);
@@ -31,5 +56,15 @@ class WineSearcher
 		}
 		
 		return false;
+    }
+
+    /**
+     * @throws \League\Csv\CannotInsertRecord
+     */
+    protected function saveCsv(): void
+    {
+        $csv = Writer::createFromPath(storage_path("app/{$this->argument('output')}"), 'w+');
+        $csv->insertOne(array_keys(Arr::first($this->rows)));
+        $csv->insertAll($this->rows);
     }
 }
