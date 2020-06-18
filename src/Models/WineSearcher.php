@@ -12,6 +12,11 @@ class WineSearcher
     protected $lang;
     protected $name_limit = 160;
     
+    /**
+     * Create a new class instance.
+     *
+     * @return void
+     */
     public function __construct()
     {
         $this->lang = config('app.locale');
@@ -133,15 +138,5 @@ class WineSearcher
     protected function getTag(\Aero\Catalog\Models\Product $product, $tag_group_name)
     {
         return optional($product->tags()->join('tag_groups', 'tag_groups.id', '=', 'tags.tag_group_id')->where("tag_groups.name->{$this->lang}", $tag_group_name)->first())->name;
-    }
-
-    /**
-     * @throws \League\Csv\CannotInsertRecord
-     */
-    protected function saveCsv(): void
-    {
-        $csv = Writer::createFromPath(storage_path("app/{$this->argument('output')}"), 'w+');
-        $csv->insertOne(array_keys(Arr::first($this->rows)));
-        $csv->insertAll($this->rows);
     }
 }
