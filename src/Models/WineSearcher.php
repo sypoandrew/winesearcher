@@ -97,7 +97,7 @@ class WineSearcher
 				
 				
 				$arr[] = [
-				'name' => $p->name,
+				'name' => $name,
 				'price' => $price,
 				'vintage' => $this->getTag($p, 'Vintage'),
 				'bottle' => $bottle,
