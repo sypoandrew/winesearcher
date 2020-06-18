@@ -9,6 +9,13 @@ use Aero\Catalog\Models\Variant;
 class WineSearcher
 {
     protected $filename = 'winesearcherfeed.xml';
+    protected $lang;
+    protected $name_limit = 160;
+    
+    public function __construct()
+    {
+        $this->lang = config('app.locale');
+    }
     
     /**
      * Generate the Wine Searcher XML feed
@@ -17,9 +24,7 @@ class WineSearcher
      */
     public function call()
     {
-        $lang = config('app.locale');
-		
-		try {
+        try {
 			$arr = [];
 			
 			$variants = Variant::where('stock_level', '>', 0)->where(function($query) {
@@ -34,14 +39,62 @@ class WineSearcher
 				if($price){
 					$price = number_format(($price / 100), 2, '.', '');
 				}
-				$bottle_size = optional($p->tags()->join('tag_groups', 'tag_groups.id', '=', 'tags.tag_group_id')->where("tag_groups.name->{$lang}", 'Bottle Size')->first())->name;
-				$case_size = optional($p->tags()->join('tag_groups', 'tag_groups.id', '=', 'tags.tag_group_id')->where("tag_groups.name->{$lang}", 'Case Size')->first())->name;
-				$bottle = "{$case_size} x {$bottle_size}";
+				$bottle_size = $this->getTag($p, 'Bottle Size');
+				$case_size = $this->getTag($p, 'Case Size');
+				
+				if($case_size){
+					$bottle = "{$case_size} x {$bottle_size}";
+				}
+				else{
+					$bottle = $bottle_size;
+				}
+				
+				
+				$country = $this->getTag($p, 'Country');
+				$region = $this->getTag($p, 'Region');
+				$subregion = $this->getTag($p, 'Sub Region');
+				$colour = $this->getTag($p, 'Colour');
+				$winetype = $this->getTag($p, 'Wine Type');
+				
+				if($country){
+					$country = ', ' . $country;
+				}
+				if($subregion){
+					$subregion = ', ' . $subregion;
+				}
+				if($region){
+					$region = ', ' . $region;
+				}
+				if($colour){
+					$colour = ', ' . $colour;
+				}
+				if($winetype){
+					$winetype = ', ' . $winetype;
+				}
+				
+				$name = $p->name . $country . $region . $subregion . $colour . $winetype;
+				if(strlen($name) > $this->name_limit){
+					//remove subregion
+					$name = $p->name . $country . $region . $colour . $winetype;
+				}
+				if(strlen($name) > $this->name_limit){
+					//remove region
+					$name = $p->name . $country . $colour . $winetype;
+				}
+				if(strlen($name) > $this->name_limit){
+					//remove wine type
+					$name = $p->name . $country . $colour;
+				}
+				if(strlen($name) > $this->name_limit){
+					//sod it - just concat
+					$name = substr($name, 0, $this->name_limit);
+				}
+				
 				
 				$arr[] = [
 				'name' => $p->name,
 				'price' => $price,
-				'vintage' => optional($p->tags()->join('tag_groups', 'tag_groups.id', '=', 'tags.tag_group_id')->where("tag_groups.name->{$lang}", 'Vintage')->first())->name,
+				'vintage' => $this->getTag($p, 'Vintage'),
 				'bottle' => $bottle,
 				'link' => $p->getUrl(true),
 				];
@@ -67,6 +120,19 @@ class WineSearcher
 		}
 		
 		return false;
+    }
+
+    /**
+     * Get the tag value, if available
+     * 
+     * @param Aero\Catalog\Models\Product $product
+     * @param string $tag_group_name
+     * 
+     * @return null|string
+     */
+    protected function getTag(\Aero\Catalog\Models\Product $product, $tag_group_name)
+    {
+        return optional($product->tags()->join('tag_groups', 'tag_groups.id', '=', 'tags.tag_group_id')->where("tag_groups.name->{$this->lang}", $tag_group_name)->first())->name;
     }
 
     /**
