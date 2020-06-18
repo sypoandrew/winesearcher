@@ -22,9 +22,10 @@ class WineSearcher
 		try {
 			$arr = [];
 			
-			$variants = Variant::where('sku', 'LIKE', '%IB')->where('stock_level', '>', 0)->whereHas('product', static function ($query) {
-                $query->where('active', true);
-                $query->whereNull('deleted_at');
+			$variants = Variant::where('stock_level', '>', 0)->where(function($query) {
+				$query->where('sku', 'LIKE', '%IB')->orWhere('sku', 'LIKE', '%EP');
+			})->whereHas('product', static function ($query) {
+                $query->where('active', true)->whereNull('deleted_at');
             })->get();
 			
 			foreach($variants as $variant){
