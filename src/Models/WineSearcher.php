@@ -32,12 +32,10 @@ class WineSearcher
         try {
 			$arr = [];
 			
-			$variants = Variant::where('stock_level', '>', 0)->where(function($query) {
-				$query->where('sku', 'LIKE', '%IB')->orWhere('sku', 'LIKE', '%EP');
-			})->whereHas('product', static function ($query) {
+			$variants = Variant::where('variants.stock_level', '>', 0)->join('attribute_variant as av', 'variants.id', 'av.variant_id')->join('attributes', 'attributes.id', 'av.attribute_id')->join('attribute_groups', 'attribute_groups.id', 'attributes.attribute_group_id')->where("attribute_groups.name->{$this->lang}", 'Duty Status')->whereIn("attributes.name->{$this->lang}", ['Bond', 'En Primeur'])->whereHas('product', static function ($query) {
                 $query->where('active', true)->whereNull('deleted_at');
             })->get();
-			
+            
 			foreach($variants as $variant){
 				$p = $variant->product()->first();
 				$price = optional($variant->prices()->where('quantity', 1)->first())->value_inc;
