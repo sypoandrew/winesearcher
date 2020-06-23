@@ -32,15 +32,15 @@ class WineSearcher
         try {
 			$arr = [];
 			
-			$variants = Variant::where('variants.stock_level', '>', 0)->join('attribute_variant as av', 'variants.id', 'av.variant_id')->join('attributes', 'attributes.id', 'av.attribute_id')->join('attribute_groups', 'attribute_groups.id', 'attributes.attribute_group_id')->where("attribute_groups.name->{$this->lang}", 'Duty Status')->whereIn("attributes.name->{$this->lang}", ['Bond', 'En Primeur'])->whereHas('product', static function ($query) {
+			$variants = Variant::select('variants.*')->where('variants.stock_level', '>', 0)->join('attribute_variant as av', 'variants.id', 'av.variant_id')->join('attributes', 'attributes.id', 'av.attribute_id')->join('attribute_groups', 'attribute_groups.id', 'attributes.attribute_group_id')->where("attribute_groups.name->{$this->lang}", 'Duty Status')->whereIn("attributes.name->{$this->lang}", ['Bond', 'En Primeur'])->whereHas('product', static function ($query) {
                 $query->where('active', true)->whereNull('deleted_at');
             })->get();
             
 			foreach($variants as $variant){
 				$p = $variant->product()->first();
-				$price = optional($variant->prices()->where('quantity', 1)->first())->value_inc;
-				if($price){
-					$price = number_format(($price / 100), 2, '.', '');
+				$price_formatted = '0.00';
+				if($price = $variant->prices()->where('quantity', 1)->first()){
+					$price_formatted = number_format(($price->value_inc / 100), 2, '.', '');
 				}
 				$bottle_size = $this->getTag($p, 'Bottle Size');
 				$case_size = $this->getTag($p, 'Case Size');
@@ -96,7 +96,7 @@ class WineSearcher
 				
 				$arr[] = [
 				'name' => $name,
-				'price' => $price,
+				'price' => $price_formatted,
 				'vintage' => $this->getTag($p, 'Vintage'),
 				'bottle' => $bottle,
 				'link' => $p->getUrl(true),
