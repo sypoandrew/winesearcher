@@ -31,84 +31,109 @@ class WineSearcher
     {
         try {
 			$arr = [];
-			
-			$variants = Variant::select('variants.*')->where('variants.stock_level', '>', 0)->join('attribute_variant as av', 'variants.id', 'av.variant_id')->join('attributes', 'attributes.id', 'av.attribute_id')->join('attribute_groups', 'attribute_groups.id', 'attributes.attribute_group_id')->where("attribute_groups.name->{$this->lang}", 'Duty Status')->whereIn("attributes.name->{$this->lang}", ['Bond', 'En Primeur'])->whereHas('product', static function ($query) {
-                $query->where('active', true)->whereNull('deleted_at');
-            })->get();
+			$products = Product::visible()->published()->hasStock()->hasVisibleVariants()->get();
             
-			foreach($variants as $variant){
-				$p = $variant->product()->first();
-				$price_formatted = '0.00';
-				if($price = $variant->prices()->where('quantity', 1)->first()){
-					$price_formatted = number_format(($price->value_inc / 100), 2, '.', '');
-				}
-				$bottle_size = $this->getTag($p, 'Bottle Size');
-				$case_size = $this->getTag($p, 'Case Size');
+			foreach($products as $p){
+				$variant = false;
 				
-				if($case_size){
-					$bottle = "{$case_size} x {$bottle_size}";
+				$variants = $p->visibleVariants();
+				foreach($variants as $v){
+					$dutystatus = optional($v->attributeGroups()->select('attributes.name')->where("attribute_groups.name->{$this->lang}", "Duty Status")->first())->name;
+					if($dutystatus == 'En Primeur' or $dutystatus == 'Bond'){
+						$variant = $v;
+						break;
+					}
 				}
-				else{
-					$bottle = $bottle_size;
+				#if no IB item we take the duty paid as last resort
+				if(!$variant){
+					foreach($variants as $v){
+						$dutystatus = optional($v->attributeGroups()->select('attributes.name')->where("attribute_groups.name->{$this->lang}", "Duty Status")->first())->name;
+						if($dutystatus == 'Duty Paid'){
+							$variant = $v;
+							break;
+						}
+					}
 				}
+				unset($variants);
 				
-				
-				$country = $this->getTag($p, 'Country');
-				$region = $this->getTag($p, 'Region');
-				$subregion = $this->getTag($p, 'Sub Region');
-				$colour = $this->getTag($p, 'Colour');
-				$winetype = $this->getTag($p, 'Wine Type');
-				
-				if($country){
-					$country = ', ' . $country;
+				if($variant){
+					$dstatus = 'IB';
+					if($dutystatus == 'Duty Paid'){
+						$dstatus = 'DP';
+					}
+					
+					$price_formatted = '0.00';
+					if($price = $variant->prices()->where('quantity', 1)->first()){
+						$price_formatted = number_format(($price->value_inc / 100), 2, '.', '');
+					}
+					$bottle_size = $this->getTag($p, 'Bottle Size');
+					$case_size = $this->getTag($p, 'Case Size');
+					
+					if($case_size){
+						$bottle = "{$case_size} x {$bottle_size}";
+					}
+					else{
+						$bottle = $bottle_size;
+					}
+					
+					$country = $this->getTag($p, 'Country');
+					$region = $this->getTag($p, 'Region');
+					$subregion = $this->getTag($p, 'Sub Region');
+					$colour = $this->getTag($p, 'Colour');
+					$winetype = $this->getTag($p, 'Wine Type');
+					
+					if($country){
+						$country = ', ' . $country;
+					}
+					if($subregion){
+						$subregion = ', ' . $subregion;
+					}
+					if($region){
+						$region = ', ' . $region;
+					}
+					if($colour){
+						$colour = ', ' . $colour;
+					}
+					if($winetype){
+						$winetype = ', ' . $winetype;
+					}
+					
+					$name = $p->name . $country . $region . $subregion . $colour . $winetype;
+					if(strlen($name) > $this->name_limit){
+						//remove subregion
+						$name = $p->name . $country . $region . $colour . $winetype;
+					}
+					if(strlen($name) > $this->name_limit){
+						//remove region
+						$name = $p->name . $country . $colour . $winetype;
+					}
+					if(strlen($name) > $this->name_limit){
+						//remove wine type
+						$name = $p->name . $country . $colour;
+					}
+					if(strlen($name) > $this->name_limit){
+						//sod it - just concat
+						$name = substr($name, 0, $this->name_limit);
+					}
+					
+					
+					$arr[] = [
+					'name' => $name,
+					'tax' => $dstatus,
+					'price' => $price_formatted,
+					'vintage' => $this->getTag($p, 'Vintage'),
+					'bottle' => $bottle,
+					'url' => $p->getUrl(true),
+					];
 				}
-				if($subregion){
-					$subregion = ', ' . $subregion;
-				}
-				if($region){
-					$region = ', ' . $region;
-				}
-				if($colour){
-					$colour = ', ' . $colour;
-				}
-				if($winetype){
-					$winetype = ', ' . $winetype;
-				}
-				
-				$name = $p->name . $country . $region . $subregion . $colour . $winetype;
-				if(strlen($name) > $this->name_limit){
-					//remove subregion
-					$name = $p->name . $country . $region . $colour . $winetype;
-				}
-				if(strlen($name) > $this->name_limit){
-					//remove region
-					$name = $p->name . $country . $colour . $winetype;
-				}
-				if(strlen($name) > $this->name_limit){
-					//remove wine type
-					$name = $p->name . $country . $colour;
-				}
-				if(strlen($name) > $this->name_limit){
-					//sod it - just concat
-					$name = substr($name, 0, $this->name_limit);
-				}
-				
-				
-				$arr[] = [
-				'name' => $name,
-				'price' => $price_formatted,
-				'vintage' => $this->getTag($p, 'Vintage'),
-				'bottle' => $bottle,
-				'link' => $p->getUrl(true),
-				];
 			}
 			
 			$xmlString = '';
-			$xmlString .= '<?xml version="1.0" encoding="UTF-8"?><wine-searcher-datafeed><wine-list>';
+			$xmlString .= '<?xml version="1.0" encoding="UTF-8"?><wine-searcher-datafeed><product-list>';
 			foreach($arr as $wine){
-				$xmlString .= '<wine><wine-name><![CDATA['.$wine['name'].']]></wine-name><price>'.$wine['price'].'</price><vintage>'.$wine['vintage'].'</vintage><bottle-size>'.$wine['bottle'].'</bottle-size><link>'.$wine['link'].'</link></wine>';
+				$xmlString .= '<row><name><![CDATA['.$wine['name'].']]></name><tax>'.$wine['tax'].'</tax><price>'.$wine['price'].'</price><vintage>'.$wine['vintage'].'</vintage><unit-size>'.$wine['bottle'].'</unit-size><url>'.$wine['url'].'</url></row>';
 			}
-			$xmlString .= '</wine-list></wine-searcher-datafeed>';
+			$xmlString .= '</product-list></wine-searcher-datafeed>';
 			
 			$dom = new \DOMDocument;
 			$dom->preserveWhiteSpace = false;
