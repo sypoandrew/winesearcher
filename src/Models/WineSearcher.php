@@ -98,6 +98,9 @@ class WineSearcher
 						$winetype = ', ' . $winetype;
 					}
 					
+					#13/8/20 - ignore winetype
+					$winetype = '';
+					
 					$name = $p->name . $country . $region . $subregion . $colour . $winetype;
 					if(strlen($name) > $this->name_limit){
 						//remove subregion
