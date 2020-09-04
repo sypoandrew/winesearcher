@@ -65,6 +65,10 @@ class WineSearcher
 					$price_formatted = '0.00';
 					if($price = $variant->prices()->where('quantity', 1)->first()){
 						$price_formatted = number_format(($price->value_inc / 100), 2, '.', '');
+						#4/9/20 - WS settings already adding VAT for DP wines, handle price as exVAT in feed
+						if($dutystatus == 'Duty Paid'){
+							$price_formatted = number_format(($price->value_ex / 100), 2, '.', '');
+						}
 					}
 					$bottle_size = $this->getTag($p, 'Bottle Size');
 					$case_size = $this->getTag($p, 'Case Size');
